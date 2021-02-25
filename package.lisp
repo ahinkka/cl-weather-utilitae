@@ -19,12 +19,16 @@
   (:use #:common-lisp)
   (:export :kelvin-to-celsius
            :celsius-to-kelvin
-	   :fahrenheit-to-celsius
+           :fahrenheit-to-celsius
            :celsius-to-fahrenheit
 
-	   :meters-per-second-to-kilometers-per-hour
-	   :kilometers-per-hour-to-meters-per-second
+           :meters-per-second-to-kilometers-per-hour
+           :kilometers-per-hour-to-meters-per-second
+           :knots-to-meters-per-second
+           :meters-per-second-to-knots
+           :miles-per-hour-to-meters-per-second
+           :meters-per-second-to-miles-per-hour
 
-	   :summer-simmer-index
+           :summer-simmer-index
            :wind-chill-index-original
            :wind-chill-environment-canada-nws))

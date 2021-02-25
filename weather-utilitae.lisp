@@ -15,13 +15,31 @@
 
 (in-package #:weather-utilitae)
 
-(defun kelvin-to-celsius (value) (- value 273.15))
-(defun celsius-to-kelvin (value) (+ value 273.15))
-(defun fahrenheit-to-celsius (value) (/ (- value 32) 1.8))
-(defun celsius-to-fahrenheit (value) (+ (* value 1.8) 32))
+(defmacro defconversionfun (from to formula)
+  (let* ((function-name (intern (format nil "~A-TO-~A" from to)))
+	 (argument-name (intern (format nil "VALUE-IN-~A" (symbol-name from))))
+	 (effective-formula
+	   (subst-if
+	    argument-name
+	    #'(lambda (x) (eq x :arg))
+	    formula)))
+    `(defun ,function-name (,argument-name) ,effective-formula)))
 
-(defun meters-per-second-to-kilometers-per-hour (value) (* value 3.6))
-(defun kilometers-per-hour-to-meters-per-second (value) (/ value 3.6))
+(defconversionfun :kelvin :celsius (- :arg 273.15))
+(defconversionfun :celsius :kelvin (+ :arg 273.15))
+(defconversionfun :fahrenheit :celsius (/ (- :arg 32) 1.8))
+(defconversionfun :celsius :fahrenheit (+ (* :arg 1.8) 32))
+
+(defconversionfun :meters-per-second :kilometers-per-hour (* :arg 3.6))
+(defconversionfun :kilometers-per-hour :meters-per-second (/ :arg 3.6))
+
+(defparameter *nautical-mile-in-meters* 1852)
+(defconversionfun :knots :meters-per-second (* *nautical-mile-in-meters* (/ :arg 3600)))
+(defconversionfun :meters-per-second :knots (/ (* :arg 3600) *nautical-mile-in-meters*))
+
+(defparameter *mile-in-meters* 1609.344)
+(defconversionfun :miles-per-hour :meters-per-second (* *mile-in-meters* (/ :arg 3600)))
+(defconversionfun :meters-per-second :miles-per-hour  (/ (* :arg 3600) *mile-in-meters*))
 
 ;; References:
 ;;  - http://ritvalawx.com/wxtermit.php
@@ -68,4 +86,3 @@
 	 (* 11.37 (expt wind-speed-in-km-per-h 0.16)))
 	(* 0.3965 celsius-air-temperature (expt wind-speed-in-km-per-h 0.16))))
     rounded))
-
