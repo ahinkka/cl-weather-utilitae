@@ -43,6 +43,7 @@
 
 ;; References:
 ;;  - http://ritvalawx.com/wxtermit.php
+;;  - https://donsnotes.com/reference/temperature-index.html
 ;;  - http://fi.wikipedia.org/wiki/Pakkasen_purevuus
 ;;  - https://en.wikipedia.org/wiki/Wind_chill
 ;; 
@@ -51,38 +52,58 @@
 ;;  - AT http://www.bom.gov.au/info/thermal_stress/#apparent
 ;;  - THW http://www.ehow.com/how_12028315_calculate-thw-index.html
 
-(defun summer-simmer-index (fahrenheit-temperature relative-humidity)
-  (-
-   (* 1.98
-      (- fahrenheit-temperature
-	 (*
-	  (- 0.55 (* 0.0055 relative-humidity))
-	  (- fahrenheit-temperature 58))))
-   56.83))
+(defun summer-simmer-index (temperature-in-celsius relative-humidity)
+  "Defined from 21°C (70 F) up."
+  (let ((fahrenheit-temperature (celsius-to-fahrenheit temperature-in-celsius)))
+    (fahrenheit-to-celsius
+     (-
+      (* 1.98
+	 (- fahrenheit-temperature
+	    (*
+	     (- 0.55 (* 0.0055 relative-humidity))
+	     (- fahrenheit-temperature 58))))
+      56.83))))
 
-(defun wind-chill-index-original (celsius-temperature wind-velocity-m-per-s-squared)
-  "This is an old unit returning not an equivalent temperature, but a value
-   with unit of kilocalories per hour per square metre. Frostbite is e.g. 1400."
-  (*
-   (+ (-
-       (* 10 (sqrt wind-velocity-m-per-s-squared))
-       wind-velocity-m-per-s-squared)
-      10.5)
-   (- 33 celsius-temperature)))
-
-(defun wind-chill-environment-canada-nws (celsius-air-temperature wind-speed-in-km-per-h)
+(defun wind-chill (air-temperature-in-celsius wind-speed-in-meters-per-second)
   "This unit tries to capture the effect of wind to cold temperatures,
    approximating how cold it really feels when there's wind.
 
+   This is the wind chill formula as specified by Environment Canada and NWS.
+
    This is defined only for temperatures at or below 10°C and wind speeds
-   above 4.8 km/h. This is also an approximation to an accuracy of one degree,
-   hence the rounding."
-  (declare (ignore leftover))
-  (multiple-value-bind (rounded leftover)
+   above 1.33 m/s (4.8 km/h). This is also an approximation to an accuracy of one
+   degree, hence the rounding."
+  (multiple-value-bind (rounded)
+      (round
+       (let ((wind-speed (meters-per-second-to-kilometers-per-hour wind-speed-in-meters-per-second)))
+	 (+
+	  (-
+	   (+ 13.12 (* 0.6215 air-temperature-in-celsius))
+	   (* 11.37 (expt wind-speed 0.16)))
+	  (* 0.3965 air-temperature-in-celsius (expt wind-speed 0.16)))))
+    rounded))
+
+(defun temperature-and-humidity-to-dew-point-temperature (temperature-in-celsius relative-humidity)
+  "Lawrence, Mark G., 2005: The relationship between relative humidity and the dewpoint temperature in moist air: A simple conversion and applications. Bull. Amer. Meteor. Soc., 86, 225-233. doi: http;//dx.doi.org/10.1175/BAMS-86-2-225"
+  (- temperature-in-celsius (/ (- 100 relative-humidity) 5)))
+
+(defun humidex-from-relative-humidity (temperature-in-celsius relative-humidity)
+  (humidex temperature-in-celsius (temperature-and-humidity-to-dew-point-temperature temperature-in-celsius relative-humidity)))
+
+(defun humidex (temperature-in-celsius dew-point-temperature-in-celsius)
+  "This follows the formula as specified in https://en.wikipedia.org/wiki/Humidex."
+  (multiple-value-bind (rounded)
       (round
        (+
-	(-
-	 (+ 13.12 (* 0.6215 celsius-air-temperature))
-	 (* 11.37 (expt wind-speed-in-km-per-h 0.16)))
-	(* 0.3965 celsius-air-temperature (expt wind-speed-in-km-per-h 0.16))))
+	temperature-in-celsius
+	(*
+	 (/ 5 9)
+	 (-
+	  (* 6.11 (expt 2.71828
+			(*
+			 5417.7530
+			 (-
+			  (/ 1 273.16)
+			  (/ 1 (+ 273.15 dew-point-temperature-in-celsius))))))
+	  10))))
     rounded))
