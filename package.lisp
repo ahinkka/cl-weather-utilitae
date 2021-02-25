@@ -29,6 +29,10 @@
            :miles-per-hour-to-meters-per-second
            :meters-per-second-to-miles-per-hour
 
+           :temperature-and-humidity-to-dew-point-temperature
+
            :summer-simmer-index
-           :wind-chill-index-original
-           :wind-chill-environment-canada-nws))
+           :wind-chill
+           :humidex-from-relative-humidity
+           :humidex
+           :heat-index))
